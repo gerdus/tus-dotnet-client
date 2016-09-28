@@ -3,9 +3,11 @@
     Sub Main()
         StartTusdServer()
 
-        ServerInfo()
-        UploadWithProgress()
-        UploadConnectionInterrupted()
+        UploadExampleMinimal()
+        'ServerInfo()
+        'UploadWithProgress()
+        'UploadConnectionInterrupted()
+
 
         StopTusdServer()
         Console.WriteLine("Press the any key")
@@ -16,6 +18,23 @@
     Private TusServerProcess As Process
     Private Property ServerURL As String = "http://127.0.0.1:1080/files/"
     '********************************************************************************************************************
+    Private Sub UploadExampleMinimal()
+        Dim testfile = GenFileText(sizeInMb:=32)
+
+        Dim tc As New TusClient.TusClient()
+        AddHandler tc.Uploading, Sub(bytesTransferred As Integer, bytesTotal As Integer)
+                                     Dim perc As Decimal = bytesTransferred / bytesTotal * 100.0
+                                     Console.WriteLine("Up {0:0.00}% {1} of {2}", perc, bytesTransferred, bytesTotal)
+                                 End Sub
+
+        Dim fileURL = tc.Create(ServerURL, testfile)
+        tc.Upload(fileURL, testfile)
+
+        tc.Delete(fileURL)
+
+        'Cleanup
+        My.Computer.FileSystem.DeleteFile(testfile.FullName)
+    End Sub
 
     Private Sub UploadWithProgress()
         Dim testfile = GenFileText(sizeInMb:=32)
@@ -69,6 +88,8 @@
         'Cleanup
         My.Computer.FileSystem.DeleteFile(testfile.FullName)
     End Sub
+
+
 
     Private Sub UploadConnectionInterrupted()
         Dim testfile = GenFileBinary(sizeInMb:=64)
