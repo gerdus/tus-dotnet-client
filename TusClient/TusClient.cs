@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 
@@ -18,6 +19,7 @@ namespace TusClient
         //------------------------------------------------------------------------------------------------
         public string Create(string URL, System.IO.FileInfo file)
         {
+            var requestUri = new Uri(URL);
             var client = new TusHTTPClient();
             var request = new TusHTTPRequest(URL);
             request.Method = "POST";
@@ -25,13 +27,38 @@ namespace TusClient
             request.AddHeader("Upload-Length", file.Length.ToString());
             request.AddHeader("Content-Length", "0");
 
+            var metadata = new Dictionary<string,string>();
+            metadata["filename"] = file.Name;
+
+            var metadatastrings = new List<string>();
+            foreach (var meta in metadata)
+            {
+                string k = meta.Key.Replace(" ", "").Replace(",","");
+                string v = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(meta.Value));
+                metadatastrings.Add(string.Format("{0} {1}", k, v ));
+            }
+            request.AddHeader("Upload-Metadata", string.Join(",",metadatastrings.ToArray()));
+
             var response = client.PerformRequest(request);
 
             if (response.StatusCode == HttpStatusCode.Created)
             {
                 if (response.Headers.ContainsKey("Location"))
                 {
-                    return response.Headers["Location"];
+                    Uri locationUri;
+                    if (Uri.TryCreate(response.Headers["Location"],UriKind.RelativeOrAbsolute,out locationUri ))
+                    {
+                        if (!locationUri.IsAbsoluteUri)
+                        {
+                            locationUri = new Uri(requestUri, locationUri);
+                        }
+                        return locationUri.ToString();
+                    }
+                    else
+                    {
+                        throw new Exception("Invalid Location Header");
+                    }
+
                 }
                 else
                 {
@@ -50,10 +77,16 @@ namespace TusClient
 
             var Offset = this.getFileOffset(URL);
             var client = new TusHTTPClient();
-            System.Security.Cryptography.SHA1 sha = new System.Security.Cryptography.SHA1CryptoServiceProvider();
+            System.Security.Cryptography.SHA1 sha = new System.Security.Cryptography.SHA1Managed();
             int ChunkSize = (int) Math.Ceiling(0.5 * 1024.0 * 1024.0); //500kb
 
-            using (var fs = new FileStream(file.FullName, FileMode.Open))
+            if (Offset == file.Length)
+            {
+                if (Uploading != null)
+                    Uploading((int)file.Length, (int)file.Length);
+            }
+
+            using (var fs = new FileStream(file.FullName, FileMode.Open, FileAccess.Read))
             {
                 while (Offset < file.Length)
                 {
@@ -136,6 +169,26 @@ namespace TusClient
             return response;
         }
         //------------------------------------------------------------------------------------------------
+        public TusHTTPResponse Head(string URL)
+        {
+            var client = new TusHTTPClient();
+            var request = new TusHTTPRequest(URL);
+            request.Method = "HEAD";
+            request.AddHeader("Tus-Resumable", "1.0.0");
+
+            try
+            {
+                var response = client.PerformRequest(request);
+                return response;
+            }
+            catch (RestWebException ex)
+            {
+                var response = new TusHTTPResponse();
+                response.StatusCode = ex.statuscode;
+                return response;
+            }
+        }
+        //------------------------------------------------------------------------------------------------
         public class TusServerInfo
         {
             public string Version = "";
@@ -214,7 +267,7 @@ namespace TusClient
 
             var response = client.PerformRequest(request);
 
-            if (response.StatusCode == HttpStatusCode.NoContent)
+            if (response.StatusCode == HttpStatusCode.NoContent || response.StatusCode == HttpStatusCode.OK)
             {
                 if (response.Headers.ContainsKey("Upload-Offset"))
                 {
