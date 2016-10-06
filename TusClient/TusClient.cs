@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Threading;
 
 namespace TusClient
 {
@@ -14,21 +15,44 @@ namespace TusClient
 
         public delegate void DownloadingEvent(int bytesTransferred, int bytesTotal);
         public event DownloadingEvent Downloading;
+
+        // ***********************************************************************************************
+        // Private
+        //------------------------------------------------------------------------------------------------
+
+        private CancellationTokenSource cancelSource = new CancellationTokenSource();
+        
         // ***********************************************************************************************
         // Public
         //------------------------------------------------------------------------------------------------
-        public string Create(string URL, System.IO.FileInfo file)
+        public void Cancel()
+        {
+            this.cancelSource.Cancel();
+        }
+
+        public string Create(string URL, System.IO.FileInfo file, Dictionary<string, string> metadata = null)
+        {
+            if (metadata == null)
+            {
+                metadata = new Dictionary<string,string>();
+            }
+            metadata["filename"] = file.Name;
+            return Create(URL, file.Length, metadata);
+        }
+        public string Create(string URL, long UploadLength, Dictionary<string, string> metadata = null)
         {
             var requestUri = new Uri(URL);
             var client = new TusHTTPClient();
             var request = new TusHTTPRequest(URL);
             request.Method = "POST";
             request.AddHeader("Tus-Resumable", "1.0.0");
-            request.AddHeader("Upload-Length", file.Length.ToString());
+            request.AddHeader("Upload-Length", UploadLength.ToString());
             request.AddHeader("Content-Length", "0");
 
-            var metadata = new Dictionary<string,string>();
-            metadata["filename"] = file.Name;
+            if (metadata == null)
+            {
+                metadata = new Dictionary<string,string>();
+            }
 
             var metadatastrings = new List<string>();
             foreach (var meta in metadata)
@@ -74,21 +98,27 @@ namespace TusClient
         //------------------------------------------------------------------------------------------------
         public void Upload(string URL, System.IO.FileInfo file)
         {
+            using (var fs = new FileStream(file.FullName, FileMode.Open, FileAccess.Read))
+            {
+                Upload(URL, fs);
+            }
+        }
+        public void Upload(string URL, System.IO.Stream fs)
+        {
 
             var Offset = this.getFileOffset(URL);
             var client = new TusHTTPClient();
             System.Security.Cryptography.SHA1 sha = new System.Security.Cryptography.SHA1Managed();
             int ChunkSize = (int) Math.Ceiling(0.5 * 1024.0 * 1024.0); //500kb
 
-            if (Offset == file.Length)
+            if (Offset == fs.Length)
             {
                 if (Uploading != null)
-                    Uploading((int)file.Length, (int)file.Length);
+                    Uploading((int)fs.Length, (int)fs.Length);
             }
 
-            using (var fs = new FileStream(file.FullName, FileMode.Open, FileAccess.Read))
-            {
-                while (Offset < file.Length)
+
+            while (Offset < fs.Length)
                 {
                     fs.Seek(Offset, SeekOrigin.Begin);
                     byte[] buffer = new byte[ChunkSize];
@@ -98,6 +128,7 @@ namespace TusClient
                     var sha1hash = sha.ComputeHash(buffer);
 
                     var request = new TusHTTPRequest(URL);
+                    request.cancelToken = this.cancelSource.Token;
                     request.Method = "PATCH";
                     request.AddHeader("Tus-Resumable", "1.0.0");
                     request.AddHeader("Upload-Offset", string.Format("{0}", Offset));
@@ -108,7 +139,7 @@ namespace TusClient
                     request.Uploading += delegate(int bytesTransferred, int bytesTotal)
                     {
                         if (Uploading != null)
-                            Uploading((int)Offset + bytesTransferred, (int)file.Length);
+                            Uploading((int)Offset + bytesTransferred, (int)fs.Length);
                     };
 
                     try
@@ -148,7 +179,7 @@ namespace TusClient
 
 
                 }
-            }
+            
         }
         //------------------------------------------------------------------------------------------------
         public TusHTTPResponse Download(string URL)
@@ -156,6 +187,7 @@ namespace TusClient
             var client = new TusHTTPClient();
 
             var request = new TusHTTPRequest(URL);
+            request.cancelToken = this.cancelSource.Token;
             request.Method = "GET";
 
             request.Downloading += delegate(int bytesTransferred, int bytesTotal)
@@ -181,7 +213,7 @@ namespace TusClient
                 var response = client.PerformRequest(request);
                 return response;
             }
-            catch (RestWebException ex)
+            catch (TusException ex)
             {
                 var response = new TusHTTPResponse();
                 response.StatusCode = ex.statuscode;

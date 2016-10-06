@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Threading;
 
 namespace TusClient
 {
@@ -17,6 +18,8 @@ namespace TusClient
         public string Method { get; set; }
         public Dictionary<string,string> Headers { get; set; }
         public byte[] BodyBytes { get; set; }
+
+        public CancellationToken cancelToken;
 
         public string BodyText
         {
@@ -74,9 +77,9 @@ namespace TusClient
 
             try
             {
-                var instream = new MemoryStream(req.BodyBytes);                
+                var instream = new MemoryStream(req.BodyBytes);
 
-                HttpWebRequest request = (HttpWebRequest) HttpWebRequest.Create(req.URL);
+                HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(req.URL);
                 request.AutomaticDecompression = DecompressionMethods.GZip;
 
                 request.Timeout = System.Threading.Timeout.Infinite;
@@ -96,7 +99,7 @@ namespace TusClient
                 int byteswritten = 0;
                 int totalbyteswritten = 0;
 
-                contentlength = (int) instream.Length;
+                contentlength = (int)instream.Length;
                 request.AllowWriteStreamBuffering = false;
                 request.ContentLength = instream.Length;
 
@@ -113,7 +116,7 @@ namespace TusClient
                         default:
                             request.Headers.Add(header.Key, header.Value);
                             break;
-                    }                 
+                    }
                 }
 
                 if (req.BodyBytes.Length > 0)
@@ -132,6 +135,8 @@ namespace TusClient
                             requestStream.Write(buffer, 0, byteswritten);
 
                             byteswritten = instream.Read(buffer, 0, buffer.Length);
+
+                            req.cancelToken.ThrowIfCancellationRequested();
                         }
 
 
@@ -140,14 +145,14 @@ namespace TusClient
 
                 req.FireDownloading(0, 0);
 
-                HttpWebResponse response = (HttpWebResponse) request.GetResponse();
+                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
 
 
                 contentlength = 0;
-                contentlength = (int) response.ContentLength;
+                contentlength = (int)response.ContentLength;
                 //contentlength=0 for gzipped responses due to .net bug
 
-                buffer = new byte[4096];
+                buffer = new byte[16 * 1024];
                 var outstream = new MemoryStream();
 
                 using (Stream responseStream = response.GetResponseStream())
@@ -166,6 +171,8 @@ namespace TusClient
                         outstream.Write(buffer, 0, bytesread);
 
                         bytesread = responseStream.Read(buffer, 0, buffer.Length);
+
+                        req.cancelToken.ThrowIfCancellationRequested();
                     }
                 }
 
@@ -180,16 +187,21 @@ namespace TusClient
                 return resp;
 
             }
+            catch (OperationCanceledException cancelEx)
+            {
+                TusException rex = new TusException(cancelEx);
+                throw rex;
+            }
             catch (WebException ex)
             {
-                RestWebException rex = new RestWebException(ex);
+                TusException rex = new TusException(ex);
                 throw rex;
             }
         }
     }
 
 
-    public class RestWebException : WebException
+    public class TusException : WebException
     {
 
         public string ResponseContent { get; set; }
@@ -198,7 +210,7 @@ namespace TusClient
 
 
         public WebException OriginalException;
-        public RestWebException(RestWebException ex, string msg)
+        public TusException(TusException ex, string msg)
             : base(string.Format("{0}{1}", msg, ex.Message), ex, ex.Status, ex.Response)
         {
             this.OriginalException = ex;
@@ -211,7 +223,13 @@ namespace TusClient
 
         }
 
-        public RestWebException(WebException ex, string msg = "")
+        public TusException(OperationCanceledException ex)
+            : base(ex.Message, ex, WebExceptionStatus.RequestCanceled, null)
+        {
+            this.OriginalException = null;           
+        }
+
+        public TusException(WebException ex, string msg = "")
             : base(string.Format("{0}{1}", msg, ex.Message), ex, ex.Status, ex.Response)
         {
 
@@ -233,6 +251,7 @@ namespace TusClient
 
                 this.ResponseContent = resp;
             }
+           
 
         }
 

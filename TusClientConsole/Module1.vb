@@ -1,15 +1,18 @@
 ﻿Module Module1
 
     Sub Main()
-        StartTusdServer()
+        'StartTusdServer()
 
-        UploadExampleMinimal()
+        'UploadExampleMinimal()
+        'UploadExampleStream()
         'ServerInfo()
         'UploadWithProgress()
         'UploadConnectionInterrupted()
+        CancelResumeExample()
 
 
-        StopTusdServer()
+
+        'StopTusdServer()
         Console.WriteLine("Press the any key")
         Console.ReadKey()
     End Sub
@@ -34,6 +37,80 @@
 
         'Cleanup
         My.Computer.FileSystem.DeleteFile(testfile.FullName)
+    End Sub
+
+    Private Sub UploadExampleStream()
+        Dim testfile = GenFileText(sizeInMb:=32)
+
+        Dim metadata As New Dictionary(Of String, String)()
+        metadata("filena") = testfile.Name
+
+        Dim tc As New TusClient.TusClient()
+        AddHandler tc.Uploading, Sub(bytesTransferred As Integer, bytesTotal As Integer)
+                                     Dim perc As Decimal = bytesTransferred / bytesTotal * 100.0
+                                     Console.WriteLine("Up {0:0.00}% {1} of {2}", perc, bytesTransferred, bytesTotal)
+                                 End Sub
+
+        Dim fileURL = tc.Create(ServerURL, testfile.Length, metadata:=metadata)
+        Using fs As New IO.FileStream(testfile.FullName, IO.FileMode.Open, IO.FileAccess.Read)
+            tc.Upload(fileURL, fs)
+        End Using
+
+
+        tc.Delete(fileURL)
+
+        'Cleanup
+        My.Computer.FileSystem.DeleteFile(testfile.FullName)
+    End Sub
+
+    Private Sub CancelResumeExample()
+        Dim testfile = GenFileText(sizeInMb:=32)
+
+        Dim lastperc As Integer = 0
+
+        Dim tc As New TusClient.TusClient()
+        AddHandler tc.Uploading, Sub(bytesTransferred As Integer, bytesTotal As Integer)
+                                     Dim perc As Decimal = bytesTransferred / bytesTotal * 100.0
+                                     If perc - lastperc > 1 Then
+                                         Console.WriteLine("Up {0:0.00}% {1} of {2}", perc, bytesTransferred, bytesTotal)
+                                         lastperc = perc
+                                     End If
+                                     If perc > 50 Then
+                                         tc.Cancel()
+                                     End If
+                                 End Sub
+
+        Dim fileURL = tc.Create(ServerURL, testfile)
+        Try
+            tc.Upload(fileURL, testfile)
+        Catch ex As TusClient.TusException
+            If ex.Status = Net.WebExceptionStatus.RequestCanceled Then
+                Console.WriteLine("Upload Cancelled")
+            Else
+                Throw
+            End If
+        End Try
+
+        Threading.Thread.Sleep(2000)
+
+        tc = New TusClient.TusClient() 'Have to create new client to resume with same URL
+        AddHandler tc.Uploading, Sub(bytesTransferred As Integer, bytesTotal As Integer)
+                                     Dim perc As Decimal = bytesTransferred / bytesTotal * 100.0
+                                     If perc - lastperc > 1 Then
+                                         Console.WriteLine("Up {0:0.00}% {1} of {2}", perc, bytesTransferred, bytesTotal)
+                                         lastperc = perc
+                                     End If
+                                 End Sub
+
+        Console.WriteLine("Upload Resumed")
+        tc.Upload(fileURL, testfile)
+
+        Console.WriteLine("Upload Complete")
+        tc.Delete(fileURL)
+
+        'Cleanup
+        My.Computer.FileSystem.DeleteFile(testfile.FullName)
+
     End Sub
 
     Private Sub UploadWithProgress()
