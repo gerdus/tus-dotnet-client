@@ -9,6 +9,11 @@ namespace TusClient
     public class TusClient
     {
         // ***********************************************************************************************
+        // Properties
+
+
+
+        // ***********************************************************************************************
         // Events
         public delegate void UploadingEvent(int bytesTransferred, int bytesTotal);
         public event UploadingEvent Uploading;
@@ -25,6 +30,12 @@ namespace TusClient
         // ***********************************************************************************************
         // Public
         //------------------------------------------------------------------------------------------------
+
+        public TusClient()
+        {
+            
+        }
+
         public void Cancel()
         {
             this.cancelSource.Cancel();
@@ -36,7 +47,10 @@ namespace TusClient
             {
                 metadata = new Dictionary<string,string>();
             }
-            metadata["filename"] = file.Name;
+            if (!metadata.ContainsKey("filename"))
+            {
+                metadata["filename"] = file.Name;
+            }
             return Create(URL, file.Length, metadata);
         }
         public string Create(string URL, long UploadLength, Dictionary<string, string> metadata = null)
@@ -102,6 +116,7 @@ namespace TusClient
             {
                 Upload(URL, fs);
             }
+
         }
         public void Upload(string URL, System.IO.Stream fs)
         {
@@ -109,7 +124,7 @@ namespace TusClient
             var Offset = this.getFileOffset(URL);
             var client = new TusHTTPClient();
             System.Security.Cryptography.SHA1 sha = new System.Security.Cryptography.SHA1Managed();
-            int ChunkSize = (int) Math.Ceiling(0.5 * 1024.0 * 1024.0); //500kb
+            int ChunkSize = (int) Math.Ceiling(3 * 1024.0 * 1024.0); //3 mb
 
             if (Offset == fs.Length)
             {

@@ -81,7 +81,7 @@ namespace TusClient
 
                 HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(req.URL);
                 request.AutomaticDecompression = DecompressionMethods.GZip;
-
+                
                 request.Timeout = System.Threading.Timeout.Infinite;
                 request.ReadWriteTimeout = System.Threading.Timeout.Infinite;
                 request.Method = req.Method;
