@@ -15,10 +15,10 @@ namespace TusClient
 
         // ***********************************************************************************************
         // Events
-        public delegate void UploadingEvent(int bytesTransferred, int bytesTotal);
+        public delegate void UploadingEvent(long bytesTransferred, long bytesTotal);
         public event UploadingEvent Uploading;
 
-        public delegate void DownloadingEvent(int bytesTransferred, int bytesTotal);
+        public delegate void DownloadingEvent(long bytesTransferred, long bytesTotal);
         public event DownloadingEvent Downloading;
 
         // ***********************************************************************************************
@@ -129,7 +129,7 @@ namespace TusClient
             if (Offset == fs.Length)
             {
                 if (Uploading != null)
-                    Uploading((int)fs.Length, (int)fs.Length);
+                    Uploading((long)fs.Length, (long)fs.Length);
             }
 
 
@@ -151,10 +151,10 @@ namespace TusClient
                     request.AddHeader("Content-Type", "application/offset+octet-stream");
                     request.BodyBytes = buffer;
 
-                    request.Uploading += delegate(int bytesTransferred, int bytesTotal)
+                    request.Uploading += delegate(long bytesTransferred, long bytesTotal)
                     {
                         if (Uploading != null)
-                            Uploading((int)Offset + bytesTransferred, (int)fs.Length);
+                            Uploading((long)Offset + bytesTransferred, (long)fs.Length);
                     };
 
                     try
@@ -205,10 +205,10 @@ namespace TusClient
             request.cancelToken = this.cancelSource.Token;
             request.Method = "GET";
 
-            request.Downloading += delegate(int bytesTransferred, int bytesTotal)
+            request.Downloading += delegate(long bytesTransferred, long bytesTotal)
             {
                 if (Downloading != null)
-                    Downloading((int)bytesTransferred, (int)bytesTotal);
+                    Downloading((long)bytesTransferred, (long)bytesTotal);
             };
 
             var response = client.PerformRequest(request);
@@ -241,7 +241,7 @@ namespace TusClient
             public string Version = "";
             public string SupportedVersions = "";
             public string Extensions = "";
-            public int MaxSize = 0;
+            public long MaxSize = 0;
             
             public bool SupportsDelete
             {
@@ -269,7 +269,7 @@ namespace TusClient
                 string MaxSize;
                 if (response.Headers.TryGetValue("Tus-Max-Size", out MaxSize))
                 {
-                    info.MaxSize = int.Parse(MaxSize);
+                    info.MaxSize = long.Parse(MaxSize);
                 }
                 else
                 {

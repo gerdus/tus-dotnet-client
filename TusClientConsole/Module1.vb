@@ -25,7 +25,7 @@
         Dim testfile = GenFileText(sizeInMb:=32)
 
         Dim tc As New TusClient.TusClient()
-        AddHandler tc.Uploading, Sub(bytesTransferred As Integer, bytesTotal As Integer)
+        AddHandler tc.Uploading, Sub(bytesTransferred As Long, bytesTotal As Long)
                                      Dim perc As Decimal = bytesTransferred / bytesTotal * 100.0
                                      Console.WriteLine("Up {0:0.00}% {1} of {2}", perc, bytesTransferred, bytesTotal)
                                  End Sub
@@ -46,7 +46,7 @@
         metadata("filena") = testfile.Name
 
         Dim tc As New TusClient.TusClient()
-        AddHandler tc.Uploading, Sub(bytesTransferred As Integer, bytesTotal As Integer)
+        AddHandler tc.Uploading, Sub(bytesTransferred As Long, bytesTotal As Long)
                                      Dim perc As Decimal = bytesTransferred / bytesTotal * 100.0
                                      Console.WriteLine("Up {0:0.00}% {1} of {2}", perc, bytesTransferred, bytesTotal)
                                  End Sub
@@ -69,7 +69,7 @@
         Dim lastperc As Integer = 0
 
         Dim tc As New TusClient.TusClient()
-        AddHandler tc.Uploading, Sub(bytesTransferred As Integer, bytesTotal As Integer)
+        AddHandler tc.Uploading, Sub(bytesTransferred As Long, bytesTotal As Long)
                                      Dim perc As Decimal = bytesTransferred / bytesTotal * 100.0
                                      If perc - lastperc > 1 Then
                                          Console.WriteLine("Up {0:0.00}% {1} of {2}", perc, bytesTransferred, bytesTotal)
@@ -94,7 +94,7 @@
         Threading.Thread.Sleep(2000)
 
         tc = New TusClient.TusClient() 'Have to create new client to resume with same URL
-        AddHandler tc.Uploading, Sub(bytesTransferred As Integer, bytesTotal As Integer)
+        AddHandler tc.Uploading, Sub(bytesTransferred As Long, bytesTotal As Long)
                                      Dim perc As Decimal = bytesTransferred / bytesTotal * 100.0
                                      If perc - lastperc > 1 Then
                                          Console.WriteLine("Up {0:0.00}% {1} of {2}", perc, bytesTransferred, bytesTotal)
@@ -117,13 +117,13 @@
         Dim testfile = GenFileText(sizeInMb:=32)
 
         Dim sw As New Stopwatch()
-        Dim bytesTransferredLast As Integer = 0
+        Dim bytesTransferredLast As Long = 0
         Dim transferRate As Decimal = 0
 
         Dim PreviousPercentage As Decimal = 0
 
         Dim tc As New TusClient.TusClient()
-        AddHandler tc.Uploading, Sub(bytesTransferred As Integer, bytesTotal As Integer)
+        AddHandler tc.Uploading, Sub(bytesTransferred As Long, bytesTotal As Long)
                                      If sw.Elapsed.TotalSeconds > 0 Then
                                          transferRate = (bytesTransferred - bytesTransferredLast) / sw.Elapsed.TotalSeconds
                                      End If
@@ -175,7 +175,7 @@
         Dim PreviousPercentageDisconnect As Decimal = 0
 
         Dim tc As New TusClient.TusClient()
-        AddHandler tc.Uploading, Sub(bytesTransferred As Integer, bytesTotal As Integer)
+        AddHandler tc.Uploading, Sub(bytesTransferred As Long, bytesTotal As Long)
 
                                      Dim perc As Decimal = bytesTransferred / bytesTotal * 100.0
                                      perc = Math.Truncate(perc)
@@ -235,7 +235,7 @@
         Console.WriteLine("MaxSize:{0}", serverInfo.MaxSize)
     End Sub
 
-    Private Function GenFileBinary(sizeInMb As Integer) As System.IO.FileInfo
+    Private Function GenFileBinary(sizeInMb As Long) As System.IO.FileInfo
         Console.WriteLine("Generating Binary Test File...")
 
         Dim fi = My.Computer.FileSystem.GetFileInfo(".\random.file")
@@ -254,7 +254,7 @@
         Return fi
     End Function
 
-    Private Function GenFileText(sizeInMb As Integer) As System.IO.FileInfo
+    Private Function GenFileText(sizeInMb As Long) As System.IO.FileInfo
         Console.WriteLine("Generating Text Test File...")
 
         Dim fi = My.Computer.FileSystem.GetFileInfo(".\random.file")
@@ -263,7 +263,7 @@
         End If
 
         Dim sizeInBytes = sizeInMb * 1024 * 1024
-        Dim bytesWritten As Integer = 0
+        Dim bytesWritten As Long = 0
 
         Using fs As New IO.FileStream(fi.FullName, IO.FileMode.Create)
             Using sw As New IO.BinaryWriter(fs)

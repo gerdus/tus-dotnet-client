@@ -8,10 +8,10 @@ namespace TusClient
 {
     public class TusHTTPRequest
     {
-        public delegate void UploadingEvent(int bytesTransferred, int bytesTotal);
+        public delegate void UploadingEvent(long bytesTransferred, long bytesTotal);
         public event UploadingEvent Uploading;
 
-        public delegate void DownloadingEvent(int bytesTransferred, int bytesTotal);
+        public delegate void DownloadingEvent(long bytesTransferred, long bytesTotal);
         public event DownloadingEvent Downloading;
 
         public string URL { get; set; }
@@ -40,14 +40,14 @@ namespace TusClient
         {
             this.Headers[k] = v;
         }
-        
-        public void FireUploading(int bytesTransferred, int bytesTotal)
+
+        public void FireUploading(long bytesTransferred, long bytesTotal)
         {
             if (Uploading != null)
                 Uploading(bytesTransferred, bytesTotal);
         }
 
-        public void FireDownloading(int bytesTransferred, int bytesTotal)
+        public void FireDownloading(long bytesTransferred, long bytesTotal)
         {
             if (Downloading != null)
                 Downloading(bytesTransferred, bytesTotal);
@@ -94,12 +94,12 @@ namespace TusClient
                 req.FireUploading(0, 0);
                 byte[] buffer = new byte[4096];
 
-                int contentlength = 0;
+                long contentlength = 0;
 
                 int byteswritten = 0;
-                int totalbyteswritten = 0;
+                long totalbyteswritten = 0;
 
-                contentlength = (int)instream.Length;
+                contentlength = (long)instream.Length;
                 request.AllowWriteStreamBuffering = false;
                 request.ContentLength = instream.Length;
 
@@ -149,7 +149,7 @@ namespace TusClient
 
 
                 contentlength = 0;
-                contentlength = (int)response.ContentLength;
+                contentlength = (long)response.ContentLength;
                 //contentlength=0 for gzipped responses due to .net bug
 
                 buffer = new byte[16 * 1024];
@@ -158,7 +158,7 @@ namespace TusClient
                 using (Stream responseStream = response.GetResponseStream())
                 {
                     int bytesread = 0;
-                    int totalbytesread = 0;
+                    long totalbytesread = 0;
 
                     bytesread = responseStream.Read(buffer, 0, buffer.Length);
 
