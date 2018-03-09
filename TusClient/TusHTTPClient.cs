@@ -87,9 +87,11 @@ namespace TusClient
                 request.Method = req.Method;
                 request.KeepAlive = false;
 
-                ServicePoint currentServicePoint = request.ServicePoint;
-                currentServicePoint.Expect100Continue = false;
-
+                if (req.URL.StartsWith("http://"))
+                {
+                    ServicePoint currentServicePoint = request.ServicePoint;
+                    currentServicePoint.Expect100Continue = false;
+                }
                 //SEND
                 req.FireUploading(0, 0);
                 byte[] buffer = new byte[4096];
