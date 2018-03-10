@@ -19,7 +19,7 @@
     <DebugType>full</DebugType>
     <DefineDebug>true</DefineDebug>
     <DefineTrace>true</DefineTrace>
-    <OutputPath>bin\Debug\</OutputPath>
+    <OutputPath>bin\Debug\net4.0\</OutputPath>
     <DocumentationFile>TusClientConsole.xml</DocumentationFile>
     <NoWarn>42016,41999,42017,42018,42019,42032,42036,42020,42021,42022</NoWarn>
   </PropertyGroup>
@@ -29,7 +29,7 @@
     <DefineDebug>false</DefineDebug>
     <DefineTrace>true</DefineTrace>
     <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
+    <OutputPath>bin\Release\net4.0\</OutputPath>
     <DocumentationFile>TusClientConsole.xml</DocumentationFile>
     <NoWarn>42016,41999,42017,42018,42019,42032,42036,42020,42021,42022</NoWarn>
   </PropertyGroup>
@@ -102,7 +102,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\TusClient\TusClient.csproj">
+    <ProjectReference Include="..\TusClient\TusClient-2012.csproj">
       <Project>{ce7aa067-3451-4252-89f6-859d47938852}</Project>
       <Name>TusClient</Name>
     </ProjectReference>

@@ -1,12 +1,12 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
-Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "TusClientConsole", "TusClientConsole\TusClientConsole.vbproj", "{324071A9-3082-4DC0-B727-26B697A669FB}"
+Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "TusClientConsole", "TusClientConsole\TusClientConsole-2012.vbproj", "{324071A9-3082-4DC0-B727-26B697A669FB}"
 	ProjectSection(ProjectDependencies) = postProject
 		{CE7AA067-3451-4252-89F6-859D47938852} = {CE7AA067-3451-4252-89F6-859D47938852}
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TusClient", "TusClient\TusClient.csproj", "{CE7AA067-3451-4252-89F6-859D47938852}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TusClient", "TusClient\TusClient-2012.csproj", "{CE7AA067-3451-4252-89F6-859D47938852}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
