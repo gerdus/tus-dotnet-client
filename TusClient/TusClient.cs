@@ -31,6 +31,8 @@ namespace TusClient
         // Public
         //------------------------------------------------------------------------------------------------
 
+        public IWebProxy Proxy { get; set; }
+
         public TusClient()
         {
             
@@ -57,6 +59,8 @@ namespace TusClient
         {
             var requestUri = new Uri(URL);
             var client = new TusHTTPClient();
+            client.Proxy = this.Proxy;
+
             var request = new TusHTTPRequest(URL);
             request.Method = "POST";
             request.AddHeader("Tus-Resumable", "1.0.0");

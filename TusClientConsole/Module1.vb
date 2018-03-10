@@ -1,18 +1,18 @@
 ﻿Module Module1
 
     Sub Main()
-        'StartTusdServer()
+        StartTusdServer()
 
         'UploadExampleMinimal()
         'UploadExampleStream()
         'ServerInfo()
-        'UploadWithProgress()
+        UploadWithProgress()
         'UploadConnectionInterrupted()
-        CancelResumeExample()
+        'CancelResumeExample()
 
 
 
-        'StopTusdServer()
+        StopTusdServer()
         Console.WriteLine("Press the any key")
         Console.ReadKey()
     End Sub
@@ -36,7 +36,7 @@
         tc.Delete(fileURL)
 
         'Cleanup
-        My.Computer.FileSystem.DeleteFile(testfile.FullName)
+        IO.File.Delete(testfile.FullName)
     End Sub
 
     Private Sub UploadExampleStream()
@@ -60,7 +60,7 @@
         tc.Delete(fileURL)
 
         'Cleanup
-        My.Computer.FileSystem.DeleteFile(testfile.FullName)
+        IO.File.Delete(testfile.FullName)
     End Sub
 
     Private Sub CancelResumeExample()
@@ -109,7 +109,7 @@
         tc.Delete(fileURL)
 
         'Cleanup
-        My.Computer.FileSystem.DeleteFile(testfile.FullName)
+        IO.File.Delete(testfile.FullName)
 
     End Sub
 
@@ -163,7 +163,7 @@
 
 
         'Cleanup
-        My.Computer.FileSystem.DeleteFile(testfile.FullName)
+        IO.File.Delete(testfile.FullName)
     End Sub
 
 
@@ -198,7 +198,7 @@
         VerifyUpload(fileURL, testfile)
 
         'Cleanup
-        My.Computer.FileSystem.DeleteFile(testfile.FullName)
+        IO.File.Delete(testfile.FullName)
     End Sub
 
     Private Sub VerifyUpload(fileURL As String, testfile As IO.FileInfo)
@@ -206,7 +206,7 @@
 
         Dim sha = New System.Security.Cryptography.SHA1CryptoServiceProvider()
 
-        Dim localBytes = My.Computer.FileSystem.ReadAllBytes(testfile.FullName)
+        Dim localBytes = IO.File.ReadAllBytes(testfile.FullName)
         Dim sha1hashLocal = BitConverter.ToString(sha.ComputeHash(localBytes))
 
         Dim tc As New TusClient.TusClient()
@@ -238,9 +238,9 @@
     Private Function GenFileBinary(sizeInMb As Long) As System.IO.FileInfo
         Console.WriteLine("Generating Binary Test File...")
 
-        Dim fi = My.Computer.FileSystem.GetFileInfo(".\random.file")
-        If My.Computer.FileSystem.FileExists(fi.FullName) Then
-            My.Computer.FileSystem.DeleteFile(fi.FullName)
+        Dim fi As New IO.FileInfo(".\random.file")
+        If IO.File.Exists(fi.FullName) Then
+            IO.File.Delete(fi.FullName)
         End If
         Dim rnd As New Random()
 
@@ -250,16 +250,16 @@
         IO.File.WriteAllBytes(fi.FullName, data)
 
         'Refresh File Info
-        fi = My.Computer.FileSystem.GetFileInfo(fi.FullName)
+        fi = New IO.FileInfo(fi.FullName)
         Return fi
     End Function
 
     Private Function GenFileText(sizeInMb As Long) As System.IO.FileInfo
         Console.WriteLine("Generating Text Test File...")
 
-        Dim fi = My.Computer.FileSystem.GetFileInfo(".\random.file")
-        If My.Computer.FileSystem.FileExists(fi.FullName) Then
-            My.Computer.FileSystem.DeleteFile(fi.FullName)
+        Dim fi As New IO.FileInfo(".\random.file")
+        If IO.File.Exists(fi.FullName) Then
+            IO.File.Delete(fi.FullName)
         End If
 
         Dim sizeInBytes = sizeInMb * 1024 * 1024
@@ -276,7 +276,7 @@
         End Using
 
         'Refresh File Info
-        fi = My.Computer.FileSystem.GetFileInfo(fi.FullName)
+        fi = New IO.FileInfo(fi.FullName)
 
         Return fi
     End Function
@@ -301,8 +301,12 @@
 
     Private Sub StartTusdServer()
         Console.WriteLine("Starting TUS server...")
+
+        Dim wd = IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..\..\..\tusd")
+        wd = IO.Path.GetFullPath(wd)
+
         TusServerProcess = New System.Diagnostics.Process()
-        TusServerProcess.StartInfo.WorkingDirectory = "..\..\tusd"
+        TusServerProcess.StartInfo.WorkingDirectory = wd
         TusServerProcess.StartInfo.FileName = "tusd.exe"
         TusServerProcess.StartInfo.Arguments = "-host 127.0.0.1"
         TusServerProcess.StartInfo.UseShellExecute = True

@@ -14,7 +14,7 @@ namespace TusClient
         public delegate void DownloadingEvent(long bytesTransferred, long bytesTotal);
         public event DownloadingEvent Downloading;
 
-        public string URL { get; set; }
+        public Uri URL { get; set; }
         public string Method { get; set; }
         public Dictionary<string,string> Headers { get; set; }
         public byte[] BodyBytes { get; set; }
@@ -30,7 +30,7 @@ namespace TusClient
 
         public TusHTTPRequest(string u)
         {
-            this.URL = u;
+            this.URL = new Uri(u);
             this.Method = "GET";
             this.Headers = new Dictionary<string, string>();
             this.BodyBytes = new byte[0];
@@ -71,6 +71,8 @@ namespace TusClient
     public class TusHTTPClient
     {
 
+        public IWebProxy Proxy { get; set; }
+        
 
         public TusHTTPResponse PerformRequest(TusHTTPRequest req)
         {
@@ -87,8 +89,20 @@ namespace TusClient
                 request.Method = req.Method;
                 request.KeepAlive = false;
 
-                ServicePoint currentServicePoint = request.ServicePoint;
-                currentServicePoint.Expect100Continue = false;
+                request.Proxy = this.Proxy;
+
+                try
+                {
+                    ServicePoint currentServicePoint = request.ServicePoint;
+                    currentServicePoint.Expect100Continue = false;
+                }
+                catch (PlatformNotSupportedException)
+                {
+                    //expected on .net core 2.0 with systemproxy
+                    //fixed by https://github.com/dotnet/corefx/commit/a9e01da6f1b3a0dfbc36d17823a2264e2ec47050
+                    //should work in .net core 2.2
+                }
+
 
                 //SEND
                 req.FireUploading(0, 0);
@@ -245,7 +259,7 @@ namespace TusClient
 
                 StreamReader readerS = new StreamReader(webresp.GetResponseStream());
 
-                dynamic resp = readerS.ReadToEnd();
+                var resp = readerS.ReadToEnd();
 
                 readerS.Close();
 
