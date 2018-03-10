@@ -6,7 +6,7 @@
 - protocol extension supported: Creation, Termination
 - no external dependencies
 - upload progress events
-- .net 4.0
+- .net 4.0 / .net standard 2.0 / .net core 2.0
 
 ## Usage
 ```vbnet
