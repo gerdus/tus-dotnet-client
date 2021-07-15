@@ -32,7 +32,7 @@ namespace TusClient
         {
             this.URL = new Uri(u);
             this.Method = "GET";
-            this.Headers = new Dictionary<string, string>();
+            this.Headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             this.BodyBytes = new byte[0];
         }
 
@@ -63,7 +63,7 @@ namespace TusClient
 
         public TusHTTPResponse()
         {
-            this.Headers = new Dictionary<string, string>();
+            this.Headers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         }
 
     }
