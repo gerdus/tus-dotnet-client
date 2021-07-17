@@ -19,7 +19,13 @@
 
     '********************************************************************************************************************
     Private TusServerProcess As Process
-    Private Property ServerURL As String = "http://127.0.0.1:1080/files/"
+    Private Property ServerAddress As String = "127.0.0.1"
+    Private Property ServerPort As Integer = 12308
+    Private ReadOnly Property ServerURL As String
+        Get
+            Return String.Format("http://{0}:{1}/files/", ServerAddress, ServerPort)
+        End Get
+    End Property
     '********************************************************************************************************************
     Private Sub UploadExampleMinimal()
         Dim testfile = GenFileText(sizeInMb:=32)
@@ -308,7 +314,7 @@
         TusServerProcess = New System.Diagnostics.Process()
         TusServerProcess.StartInfo.WorkingDirectory = wd
         TusServerProcess.StartInfo.FileName = "tusd.exe"
-        TusServerProcess.StartInfo.Arguments = "-host 127.0.0.1"
+        TusServerProcess.StartInfo.Arguments = String.Format("-host {0} -port {1}", ServerAddress, ServerPort)
         TusServerProcess.StartInfo.UseShellExecute = True
         TusServerProcess.StartInfo.CreateNoWindow = False
         TusServerProcess.StartInfo.WindowStyle = ProcessWindowStyle.Minimized
