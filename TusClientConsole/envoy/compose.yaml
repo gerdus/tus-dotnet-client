@@ -1,0 +1,16 @@
+version: '3.8'
+
+
+services:
+  envoy:
+    image: envoyproxy/envoy:v1.30-latest
+    depends_on:
+      - tusd
+    ports:
+      - "8800:8800"
+      - "8081:8081"     
+    volumes:
+      - ./envoy.yaml:/etc/envoy/envoy.yaml      
+  tusd:
+    image: tusproject/tusd:latest
+
